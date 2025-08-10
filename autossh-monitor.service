@@ -1,0 +1,16 @@
+[Unit]
+Description=AutoSSH Monitor Service
+After=network.target autossh-comfyui@.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/gpu_monitor.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target 

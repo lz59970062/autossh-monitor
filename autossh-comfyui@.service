@@ -1,0 +1,20 @@
+[Unit]
+Description=AutoSSH reverse tunnel for ComfyUI on remote port %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/autossh-comfyui.env
+Environment=AUTOSSH_GATETIME=0
+Environment=AUTOSSH_POLL=600
+Environment=AUTOSSH_LOGLEVEL=7
+ExecStart=/usr/bin/autossh -M 0 -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -R %i:localhost:${LOCAL_PORT} ${REMOTE_HOST}
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target 
