@@ -13,6 +13,9 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# 检测调用用户（用于使用其 ~/.ssh/config 别名）
+RUN_USER="${SUDO_USER:-$(logname 2>/dev/null || echo root)}"
+
 # 检测当前服务器类型
 if hostname | grep -q "C202507250943037"; then
     SERVER_TYPE="cloud"
@@ -77,6 +80,7 @@ if [ "$SERVER_TYPE" = "gpu" ]; then
     echo "- 节点类型: ${NODE_TYPE:-未设置}"
     echo "- 控制端SSH: ${REMOTE_HOST}"
     echo "- 远程端口: ${REMOTE_PORT}"
+    echo "- 使用SSH配置用户: ${RUN_USER} (将使用 /home/${RUN_USER}/.ssh/config)"
     read -p "确认安装并启动? (y/N): " confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         echo "已取消"
@@ -92,6 +96,7 @@ if [ "$SERVER_TYPE" = "gpu" ]; then
 REMOTE_HOST="${REMOTE_HOST}"
 LOCAL_PORT="8081"
 NODE_TYPE="${NODE_TYPE}"
+RUN_USER="${RUN_USER}"
 EOF
 
     # 启用并启动 autossh 反向隧道实例

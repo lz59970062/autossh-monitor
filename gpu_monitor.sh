@@ -20,6 +20,13 @@ fi
 SERVICE_NAME="autossh-comfyui@${REMOTE_PORT}"
 MONITOR_PORT="20000"
 
+# 从 envfile 读取 RUN_USER（如果存在），以便使用该用户的 ssh config
+if [ -f "/etc/autossh-comfyui.env" ]; then
+    # shellcheck disable=SC1091
+    . /etc/autossh-comfyui.env
+fi
+SSH_CONFIG_PATH="/home/${RUN_USER:-root}/.ssh/config"
+
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
 }
@@ -41,7 +48,7 @@ check_port_forward() {
 }
 
 check_remote_connection() {
-    if timeout 10 ssh -o ConnectTimeout=5 -o BatchMode=yes "$REMOTE_HOST" "echo 'connection_test'" >/dev/null 2>&1; then
+    if timeout 10 ssh -F "$SSH_CONFIG_PATH" -o ConnectTimeout=5 -o BatchMode=yes "$REMOTE_HOST" "echo 'connection_test'" >/dev/null 2>&1; then
         return 0
     else
         return 1
