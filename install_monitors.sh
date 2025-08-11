@@ -74,17 +74,29 @@ if [ "$SERVER_TYPE" = "gpu" ]; then
     REMOTE_HOST=${input_remote_host:-serhk}
     read -p "请输入该节点在控制端使用的远程端口 [默认: 8081]: " input_remote_port
     REMOTE_PORT=${input_remote_port:-8081}
+    read -p "请输入本机 ComfyUI 端口（LOCAL_PORT）[默认: 28081]: " input_local_port
+    LOCAL_PORT=${input_local_port:-28081}
 
     # 显示确认信息
     echo "\n配置预览："
     echo "- 节点类型: ${NODE_TYPE:-未设置}"
     echo "- 控制端SSH: ${REMOTE_HOST}"
     echo "- 远程端口: ${REMOTE_PORT}"
+    echo "- 本机ComfyUI端口: ${LOCAL_PORT}"
     echo "- 使用SSH配置用户: ${RUN_USER} (将使用 /home/${RUN_USER}/.ssh/config)"
     read -p "确认安装并启动? (y/N): " confirm
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         echo "已取消"
         exit 0
+    fi
+
+    # 若之前存在旧实例且端口不同，则停用旧实例
+    if [ -f "/etc/autossh-remote-port" ]; then
+        OLD_REMOTE_PORT="$(cat /etc/autossh-remote-port)"
+        if [ -n "$OLD_REMOTE_PORT" ] && [ "$OLD_REMOTE_PORT" != "$REMOTE_PORT" ]; then
+            echo "检测到旧实例 autossh-comfyui@${OLD_REMOTE_PORT}.service，正在停用..."
+            systemctl disable --now autossh-comfyui@"${OLD_REMOTE_PORT}".service 2>/dev/null || true
+        fi
     fi
 
     # 写入配置文件
@@ -94,10 +106,12 @@ if [ "$SERVER_TYPE" = "gpu" ]; then
     # 为 autossh systemd 模板提供变量
     cat >/etc/autossh-comfyui.env <<EOF
 REMOTE_HOST="${REMOTE_HOST}"
-LOCAL_PORT="8081"
+LOCAL_PORT="${LOCAL_PORT}"
 NODE_TYPE="${NODE_TYPE}"
 RUN_USER="${RUN_USER}"
 EOF
+
+    systemctl daemon-reload
 
     # 启用并启动 autossh 反向隧道实例
     systemctl enable autossh-comfyui@"${REMOTE_PORT}".service

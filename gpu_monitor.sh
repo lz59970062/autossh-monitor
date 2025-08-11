@@ -11,7 +11,7 @@ if [ -f "/etc/autossh-remote-host" ]; then
 else
     REMOTE_HOST="serhk"
 fi
-LOCAL_PORT="8081"
+LOCAL_PORT="28081"
 if [ -f "/etc/autossh-remote-port" ]; then
     REMOTE_PORT="$(cat /etc/autossh-remote-port)"
 else
